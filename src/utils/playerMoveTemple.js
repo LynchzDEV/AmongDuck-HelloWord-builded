@@ -1,6 +1,5 @@
-let gravity = 550;
+const debug = false;
 let holdTime = 0;
-const debug = true;
 
 function logdebug(message) {
   if (debug) {
@@ -8,33 +7,38 @@ function logdebug(message) {
   }
 }
 
+function getMultiplier(gravity) {
+  return (gravity = 250 ? 2 : 2.5);
+}
+
 function setHorizontalMovement(player, isLeft, isRight, normalSpeed, flipLeft) {
   let velocityX = 0;
   if (isLeft) {
     velocityX = -normalSpeed;
-    player.setFlipX(flipLeft);
-    logdebug('move left');
+    player.setFlipX(!flipLeft);
+    logdebug("move left");
   } else if (isRight) {
     velocityX = normalSpeed;
-    player.setFlipX(!flipLeft);
-    logdebug('move right');
+    player.setFlipX(flipLeft);
+    logdebug("move right");
   }
   return velocityX;
 }
 
-function handleJump(player, isUp) {
-  let velocityY = 0;
+function handleJump(player, isUp, gravity) {
+  let multiplier = getMultiplier(gravity);
+  let velocityY = player.body.velocity.y;
   if (isUp && player.body.touching.down) {
     holdTime++;
     logdebug(holdTime);
   } else if (player.body.touching.down && !isUp) {
     if (holdTime > 0 && holdTime < 10) {
-      velocityY = -200;
-      logdebug('short jump');
+      velocityY = -300;
+      logdebug("short jump");
     } else if (holdTime >= 10) {
       if (holdTime > 100) holdTime = 100;
-      velocityY = -200 - holdTime * 2;
-      logdebug('long jump');
+      velocityY = -300 - holdTime * multiplier;
+      logdebug("long jump");
     }
     holdTime = 0;
   } else {
@@ -50,7 +54,8 @@ function playerMoveTemple(
   touchPad,
   isLeftPressed,
   isRightPressed,
-  isUpPressed
+  isUpPressed,
+  gravity
 ) {
   let velocityX, velocityY;
 
@@ -63,14 +68,14 @@ function playerMoveTemple(
       normalSpeed,
       flipLeft
     );
-    velocityY = handleJump(player, isUpPressed);
+    velocityY = handleJump(player, isUpPressed, gravity);
   } else {
     // Use keyboard controls
     const cursors = this.input.keyboard.createCursorKeys();
-    const a = this.input.keyboard.addKey('a');
-    const d = this.input.keyboard.addKey('d');
-    const space = this.input.keyboard.addKey('SPACE');
-    const arrowUp = this.input.keyboard.addKey('UP');
+    const a = this.input.keyboard.addKey("a");
+    const d = this.input.keyboard.addKey("d");
+    const space = this.input.keyboard.addKey("SPACE");
+    const arrowUp = this.input.keyboard.addKey("UP");
 
     const isLeftDown = cursors.left.isDown || a.isDown;
     const isRightDown = cursors.right.isDown || d.isDown;
@@ -88,7 +93,11 @@ function playerMoveTemple(
 
   player.setGravityY(gravity);
   player.setVelocity(velocityX, velocityY);
-  player.anims.play('walk', velocityX !== 0 || velocityY !== 0);
+  if (velocityX !== 0 || velocityY !== 0) {
+    player.anims.play("walk", true);
+  } else {
+    player.anims.play("idle", true);
+  }
 }
 
 export default playerMoveTemple;
